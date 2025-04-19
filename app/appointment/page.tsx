@@ -62,19 +62,10 @@ export default function AppointmentPage() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [selectedStaff, setSelectedStaff] = useState<number | null>(null)
   const [isSubmitted, setIsSubmitted] = useState(false)
-  const [currentTime, setCurrentTime] = useState(new Date())
 
   // Form fields
   const [fullName, setFullName] = useState("")
   const [phone, setPhone] = useState("")
-
-  // Update current time every minute
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 60000)
-    return () => clearInterval(interval)
-  }, [])
 
   const handleNext = () => {
     if (step < 3) setStep(step + 1)
