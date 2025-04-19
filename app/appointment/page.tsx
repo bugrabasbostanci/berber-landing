@@ -123,7 +123,19 @@ export default function AppointmentPage() {
   }
 
   // For debugging - show current time in UI
-  const formattedCurrentTime = format(currentTime, "HH:mm:ss")
+  const [debugTime, setDebugTime] = useState(new Date())
+
+  // Zamanı her saniye güncelle
+  useEffect(() => {
+    const debugTimer = setInterval(() => {
+      setDebugTime(new Date())
+    }, 1000)
+
+    // Component unmount olduğunda timer'ı temizle
+    return () => clearInterval(debugTimer)
+  }, [])
+
+  const formattedDebugTime = format(debugTime, "HH:mm:ss")
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -134,7 +146,7 @@ export default function AppointmentPage() {
             <h1 className="text-2xl sm:text-3xl font-bold">Randevu Oluştur</h1>
             <p className="text-muted-foreground">Birkaç adımda kolayca randevu alın</p>
             {/* Debug info - would be removed in production */}
-            <p className="text-xs text-muted-foreground mt-1">Sistem saati: {formattedCurrentTime}</p>
+            <p className="text-xs text-muted-foreground mt-1">Sistem saati: {formattedDebugTime}</p>
           </div>
 
           {!isSubmitted ? (
@@ -169,80 +181,13 @@ export default function AppointmentPage() {
                   </div>
                 </div>
                 <div className="mt-2 flex justify-between text-xs sm:text-sm">
-                  <span>Tarih ve Saat</span>
                   <span>Personel Seçimi</span>
+                  <span>Tarih ve Saat</span>
                   <span>Onay</span>
                 </div>
               </div>
 
               {step === 1 && (
-                <div>
-                  <h2 className="mb-4 text-lg sm:text-xl font-semibold">Tarih ve Saat Seçin</h2>
-                  <div className="grid gap-6 md:gap-8 md:grid-cols-2">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base sm:text-lg">Tarih Seçin</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={(date) => {
-                            setSelectedDate(date)
-                            setSelectedTime(null) // Reset time when date changes
-                          }}
-                          className="rounded-md border mx-auto"
-                          disabled={(date) => {
-                            const today = new Date()
-                            today.setHours(0, 0, 0, 0)
-                            return date < today || date.getDay() === 0 // Bugünden önceki günler ve Pazar günleri kapalı
-                          }}
-                          locale={tr}
-                        />
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base sm:text-lg">Saat Seçin</CardTitle>
-                        {selectedDate ? (
-                          <CardDescription>
-                            {format(selectedDate, "d MMMM yyyy, EEEE", { locale: tr })} için uygun saatler
-                          </CardDescription>
-                        ) : (
-                          <CardDescription>Lütfen önce bir tarih seçin</CardDescription>
-                        )}
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-3 gap-2">
-                          {timeSlots.map((time) => {
-                            const isPassed = isTimeSlotPassed(selectedDate, time)
-                            return (
-                              <Button
-                                key={time}
-                                variant={selectedTime === time ? "default" : "outline"}
-                                className={cn("w-full text-xs sm:text-sm", isPassed && "opacity-50 cursor-not-allowed")}
-                                onClick={() => setSelectedTime(time)}
-                                disabled={!selectedDate || isPassed}
-                              >
-                                {time}
-                              </Button>
-                            )
-                          })}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                  <div className="mt-8 flex justify-end">
-                    <Button onClick={handleNext} disabled={!selectedDate || !selectedTime} className="w-full sm:w-auto">
-                      Devam Et
-                      <ChevronRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {step === 2 && (
                 <div>
                   <h2 className="mb-4 text-lg sm:text-xl font-semibold">Personel Seçin</h2>
                   <RadioGroup
@@ -299,6 +244,79 @@ export default function AppointmentPage() {
                       ))}
                     </div>
                   </RadioGroup>
+                  <div className="mt-8 flex justify-end">
+                    <Button
+                      onClick={handleNext}
+                      disabled={!selectedStaff}
+                      className="w-full sm:w-auto"
+                    >
+                      Devam Et
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {step === 2 && (
+                <div>
+                  <h2 className="mb-4 text-lg sm:text-xl font-semibold">Tarih ve Saat Seçin</h2>
+                  <div className="grid gap-6 md:gap-8 md:grid-cols-2">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base sm:text-lg">Tarih Seçin</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Calendar
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={(date) => {
+                            setSelectedDate(date)
+                            setSelectedTime(null) // Reset time when date changes
+                          }}
+                          className="rounded-md border mx-auto"
+                          disabled={(date) => {
+                            const today = new Date()
+                            today.setHours(0, 0, 0, 0)
+                            // Burada seçilen personelin müsait olduğu günleri kontrol edebilirsiniz
+                            return date < today || date.getDay() === 0 // Bugünden önceki günler ve Pazar günleri kapalı
+                          }}
+                          locale={tr}
+                        />
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base sm:text-lg">Saat Seçin</CardTitle>
+                        {selectedDate ? (
+                          <CardDescription>
+                            {format(selectedDate, "d MMMM yyyy, EEEE", { locale: tr })} için uygun saatler
+                          </CardDescription>
+                        ) : (
+                          <CardDescription>Lütfen önce bir tarih seçin</CardDescription>
+                        )}
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-3 gap-2">
+                          {timeSlots.map((time) => {
+                            const isPassed = isTimeSlotPassed(selectedDate, time)
+                            // Burada seçilen personel ve tarih için müsait saatleri filtreleyebilirsiniz
+                            return (
+                              <Button
+                                key={time}
+                                variant={selectedTime === time ? "default" : "outline"}
+                                className={cn("w-full text-xs sm:text-sm", isPassed && "opacity-50 cursor-not-allowed")}
+                                onClick={() => setSelectedTime(time)}
+                                disabled={!selectedDate || isPassed}
+                              >
+                                {time}
+                              </Button>
+                            )
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                   <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:justify-between">
                     <Button variant="outline" onClick={handleBack} className="order-2 sm:order-1 w-full sm:w-auto">
                       <ChevronLeft className="mr-2 h-4 w-4" />
@@ -306,7 +324,7 @@ export default function AppointmentPage() {
                     </Button>
                     <Button
                       onClick={handleNext}
-                      disabled={!selectedStaff}
+                      disabled={!selectedDate || !selectedTime}
                       className="order-1 sm:order-2 w-full sm:w-auto"
                     >
                       Devam Et

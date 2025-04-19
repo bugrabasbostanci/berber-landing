@@ -10,7 +10,7 @@ const services = [
   {
     id: 1,
     name: "Saç Traşı",
-    price: "100 ₺",
+    price: "300 ₺",
     duration: "30 dk",
     description: "Modern veya klasik saç kesimi",
     details:
